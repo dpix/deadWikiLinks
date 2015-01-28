@@ -1,0 +1,13 @@
+{
+  "name"         : "wikipedia-broken-link-finder",
+  "version"      : "0.0.1",
+  "description"  : "Find broken links on wikipedia",
+  "main"         : "server.js",
+  "author"       : "dpix",
+  "dependencies" : {
+    "express"    : "latest",
+    "request"    : "latest",
+    "cheerio"    : "latest",
+    "colors"      : "latest"
+  }
+}
