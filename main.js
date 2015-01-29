@@ -15,25 +15,25 @@ var requestPage = function(url){
   var options = {
     url: url,
     headers: {
-        'User-Agent': '@BrokenWikiLinks'
+      'User-Agent': '@BrokenWikiLinks'
     }
   };
   request(options, function(error, response, html){
-      var wikiPageUrl = response.request.href
-      console.log(('searching for broken links at ' + wikiPageUrl).blue)
-      if(!error){
-          var $ = cheerio.load(html);
-          // find all external links on the page
-          var urls = $('#content').find('a[href^="http"]')
-            .map(function(a, b){return $(b).attr('href')})
-            .filter(function(a, b){return b.indexOf('wikipedia') < 0})
+    var wikiPageUrl = response.request.href
+    console.log(('searching for broken links at ' + wikiPageUrl).blue)
+    if(!error){
+      var $ = cheerio.load(html);
+      // find all external links on the page
+      var urls = $('#content').find('a[href^="http"]')
+      .map(function(a, b){return $(b).attr('href')})
+      .filter(function(a, b){return b.indexOf('wikipedia') < 0})
 
-          // map over each one
-          urls.each(function(index, u){
-            console.log(('checking ' + u).yellow)
-            urlsToCheck.push({url: u, page: wikiPageUrl})
-          })
-      }
+      // map over each one
+      urls.each(function(index, u){
+        console.log(('checking ' + u).yellow)
+        urlsToCheck.push({url: u, page: wikiPageUrl})
+      })
+    }
   })
 }
 
@@ -41,9 +41,9 @@ var requestLink = function(u, wikiPageUrl){
   var options = {
     url: u,
     headers: {
-        'User-Agent': '@BrokenWikiLinks'
+      'User-Agent': '@BrokenWikiLinks'
     }
-};
+  };
   request(options,function(error, response){
     // if it errors (4xx / 5xx) then report!
     if(error && (!response || response.statusCode >= 400)){
@@ -70,7 +70,7 @@ var checkUrls = function(){
   }
 
   else{
-  setTimeout(checkUrls)
+    setTimeout(checkUrls)
   }
 }
 
