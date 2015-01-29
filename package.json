@@ -5,9 +5,10 @@
   "main"         : "server.js",
   "author"       : "dpix",
   "dependencies" : {
-    "express"    : "latest",
     "request"    : "latest",
     "cheerio"    : "latest",
-    "colors"      : "latest"
+    "colors"      : "latest",
+    "twit": "latest",
+    "yargs":  "latest"
   }
 }

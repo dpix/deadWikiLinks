@@ -1,37 +1,85 @@
 var request = require('request');
 var cheerio = require('cheerio');
 var colors = require('colors');
+var Twit = require('twit');
+var argv = require('yargs').argv;
+var config = require('./config.twitconfig')
 
-setInterval(function(req, res){
-// The URL we will scrape from - in our example Anchorman 2.
+var bot = new Twit(config)
+var post = argv.p || false;
+var url = argv._[0] || 'http://www.wikipedia.org/wiki/special:random';
 
-    var url = 'http://www.wikipedia.org/wiki/special:random';
+var urlsToCheck = [];
 
-    // The structure of our request call
-    // The first parameter is our URL
-    // The callback function takes 3 parameters, an error, response status code and the html
+var requestPage = function(url){
+  var options = {
+    url: url,
+    headers: {
+        'User-Agent': '@BrokenWikiLinks'
+    }
+  };
+  request(options, function(error, response, html){
+      var wikiPageUrl = response.request.href
+      console.log(('searching for broken links at ' + wikiPageUrl).blue)
+      if(!error){
+          var $ = cheerio.load(html);
+          // find all external links on the page
+          var urls = $('#content').find('a[href^="http"]')
+            .map(function(a, b){return $(b).attr('href')})
+            .filter(function(a, b){return b.indexOf('wikipedia') < 0})
 
-    request(url, function(error, response, html){
-        // First we'll check to make sure no errors occurred when making the request
-        console.log(('searching for broken links at ' + response.request.href).blue)
-        if(!error){
-            // Next, we'll utilize the cheerio library on the returned html which will essentially give us jQuery functionality
+          // map over each one
+          urls.each(function(index, u){
+            console.log(('checking ' + u).yellow)
+            urlsToCheck.push({url: u, page: wikiPageUrl})
+          })
+      }
+  })
+}
 
-            var $ = cheerio.load(html);
+var requestLink = function(u, wikiPageUrl){
+  var options = {
+    url: u,
+    headers: {
+        'User-Agent': '@BrokenWikiLinks'
+    }
+};
+  request(options,function(error, response){
+    // if it errors (4xx / 5xx) then report!
+    if(error && (!response || response.statusCode >= 400)){
+      console.log(('found broken link: ' + u + ', error: ' + error).red)
 
-            // Finally, we'll define the variables we're going to capture
+      console.log('posting to Twitter')
+      if(post){
+        bot.post('statuses/update', { status: 'Page: ' + wikiPageUrl + ', broken link: ' + u }, function(){
+          //do something??
 
-            var urls = $('a[href^="http"]').map(function(a, b){return $(b).attr('href')})
+          console.log('succesfully posted to twitter')
+        });
+      }
+    }
 
-            urls.each(function(index, u){
-              request(u, function(error, response, html){
-                console.log(('checking ' + u).yellow)
-                if(error){
-                  console.log(('found broken link: ' + u).red)
-                }
-              })
-            })
-        }
-    })
+    setImmediate(checkUrls)
+  });
+}
 
-}, 1000)
+var checkUrls = function(){
+  if(urlsToCheck.length){
+    var meh = urlsToCheck.pop()
+    requestLink(meh.url, meh.page)
+  }
+
+  else{
+  setTimeout(checkUrls)
+  }
+}
+
+requestPage(url)
+
+if(!argv._.length){
+  setInterval(function(){
+    requestPage(url)
+  }, argv.t || 20 * 1000)
+}
+
+setTimeout(checkUrls)
