@@ -1,8 +1,8 @@
-var request = require('request');
-var cheerio = require('cheerio');
-var colors = require('colors');
-var Twit = require('twit');
-var argv = require('yargs').argv;
+var request = require('request'); //http
+var cheerio = require('cheerio'); //jquery
+var colors = require('colors');   //colored console
+var Twit = require('twit');       //twitter api
+var argv = require('yargs').argv; //command line args
 var config = require('./config.twitconfig')
 
 var bot = new Twit(config)
@@ -12,6 +12,11 @@ var url = argv._[0] || 'http://www.wikipedia.org/wiki/special:random';
 var urlsToCheck = [];
 
 var requestPage = function(url){
+  //throttling
+  if(urlsToCheck.length > 100000){
+    return;// dont drown yourself
+  }
+
   var options = {
     url: url,
     headers: {
@@ -19,7 +24,13 @@ var requestPage = function(url){
     }
   };
   request(options, function(error, response, html){
-    var wikiPageUrl = response.request.href
+    try{
+      var wikiPageUrl = response.request.href
+    }
+    catch(e){
+      console.log(('occasionally this errors... :S' + e).purple)
+      return;
+    }
     console.log(('searching for broken links at ' + wikiPageUrl).blue)
     if(!error){
       var $ = cheerio.load(html);
@@ -44,7 +55,7 @@ var requestLink = function(u, wikiPageUrl){
       'User-Agent': '@BrokenWikiLinks'
     }
   };
-  request(options,function(error, response){
+  request.head(options,function(error, response){
     // if it errors (4xx / 5xx) then report!
     if(error && (!response || response.statusCode >= 400)){
       console.log(('found broken link: ' + u + ', error: ' + error).red)
